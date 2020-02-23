@@ -1,6 +1,7 @@
 package acambieri.walleter.model
 
 import javax.persistence.Entity
+import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
@@ -17,13 +18,13 @@ class Wallet {
     @ManyToOne
     User owner
     Date dateCreated
+    @OneToMany(fetch = FetchType.EAGER)
+    List<WalletEvent> events = new ArrayList<>()
     @OneToMany
-    List<WalletEvent> events
+    List<RecurringEvent> recurringEvents = new ArrayList<>()
     @OneToMany
-    List<RecurringEvent> recurringEvents
+    List<ShareWalletRequest> shareRequests = new ArrayList<>()
     @OneToMany
-    List<ShareWalletRequest> shareRequests
-    @OneToMany
-    List<User> sharers
+    List<User> sharers = new ArrayList<>()
 
 }

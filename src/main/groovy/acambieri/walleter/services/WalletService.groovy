@@ -60,6 +60,7 @@ class WalletService {
     }
 
     Wallet addRecurringEventToWallet(Wallet wallet, RecurringEvent event){
+        event.wallet = wallet
         wallet.recurringEvents << recurringEventRepository.save(event)
         walletRepository.save(wallet)
     }
@@ -92,15 +93,20 @@ class WalletService {
         shareRequest
     }
 
-    ShareWalletRequest acceptShareRequest(ShareWalletRequest request,String username){
-        if(!shareRequestsChecks(request,username)){
+    ShareWalletRequest acceptShareRequest(ShareWalletRequest request,String receiverUsername){
+        if(!shareRequestsChecks(request,receiverUsername)){
             return null
         }
         if(!request.receiver.sharedWallets?.contains(request.wallet)){
-            request.receiver.sharedWallets << request.wallet
+            Wallet wallet = findWallet(request.wallet.id)
+            User user = findUser(receiverUsername)
+            wallet.sharers << user
+            user.sharedWallets << wallet
             request.status=RequestStatus.ACCEPTED
-            userRepository.save request.receiver
-            shareRequestRepository.save request
+            userRepository.save user
+            walletRepository.save wallet
+            request=shareRequestRepository.save request
+            request
         }
         else{
             request.status = RequestStatus.DUPLICATE
@@ -127,10 +133,11 @@ class WalletService {
         }
     }
 
-    boolean shareRequestsChecks(ShareWalletRequest shareWalletRequest, String username) {
+    boolean shareRequestsChecks(ShareWalletRequest shareWalletRequest, String receiverUsername) {
         def dbRequest = shareRequestRepository.findById(shareWalletRequest.id).get()
-        def user = userRepository.findByUsername(username)
+        def user = userRepository.findByUsername(receiverUsername)
         if(shareWalletRequest != dbRequest) return false
         if(!user.getShareRequests().contains(dbRequest)) return false
+        return true
     }
 }
