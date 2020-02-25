@@ -1,5 +1,8 @@
 package acambieri.walleter.controller
 
+import acambieri.walleter.controller.requests.CreateShareRequest
+import acambieri.walleter.controller.requests.DeleteShareRequest
+import acambieri.walleter.controller.requests.UpdateShareRequest
 import acambieri.walleter.model.RequestStatus
 import acambieri.walleter.model.ShareWalletRequest
 import acambieri.walleter.model.VO.VOShareRequest
@@ -14,11 +17,16 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 import java.security.Principal
 
-@Controller
+@RestController
 @CompileStatic
+@RequestMapping("/share")
 class ShareRequestController {
 
     @Autowired
@@ -26,7 +34,7 @@ class ShareRequestController {
     @Autowired
     UserService userService
 
-    @GetMapping("/share")
+    @GetMapping()
     def listSharedRequests(Principal principal){
         def user = userService.getUser(principal.name)
         return [ owned: user.createdShareRequests.collect{new VOShareRequest(it)},
@@ -36,28 +44,28 @@ class ShareRequestController {
         ]
     }
 
-    @PostMapping("/share")
-    def share(Long walletId, String username, Principal principal){
-        def wallet = walletService.findWallet(walletId)
+    @PostMapping()
+    def share(@RequestBody CreateShareRequest request, Principal principal){
+        def wallet = walletService.findWallet(request.walletId)
         def user = userService.getUser(principal.name)
         if(wallet.owner != user){
             return ResponseEntity.badRequest().build()
         }
-        def userToShare = walletService.findUser(username)
+        def userToShare = userService.getUser(request.username)
         if(!userToShare){
             return ResponseEntity.badRequest().build()
         }
         new VOShareRequest(walletService.createShareRequest(user,wallet,userToShare))
     }
 
-    @PutMapping("/share")
-    def shareRequest(ShareWalletRequest shareRequest, RequestStatus status,Principal principal) {
+    @PutMapping()
+    def shareRequest(@RequestBody UpdateShareRequest request, Principal principal) {
         def createdShareRequest
-        if (status == RequestStatus.ACCEPTED) {
-            createdShareRequest = walletService.acceptShareRequest(shareRequest,principal.name)
+        if (request.status == RequestStatus.ACCEPTED) {
+            createdShareRequest = walletService.acceptShareRequest(request.shareRequest.id,principal.name)
         }
         else{
-            createdShareRequest = walletService.rejectShareRequest(shareRequest,principal.name)
+            createdShareRequest = walletService.rejectShareRequest(request.shareRequest.id,principal.name)
         }
         if(!createdShareRequest){
             return ResponseEntity.badRequest().build()
@@ -65,13 +73,13 @@ class ShareRequestController {
         new VOShareRequest(createdShareRequest)
     }
 
-    @DeleteMapping("/share")
-    def deleteShareGrant(Wallet wallet, String username, Principal principal){
-        def userWithShare = walletService.findUser(username)
-        def owner = walletService.findUser(principal.name)
-        def dbWallet = walletService.findWallet(wallet.id)
+    @DeleteMapping()
+    def deleteShareGrant(@RequestBody DeleteShareRequest request, Principal principal){
+        def userWithShare = userService.getUser(request.username)
+        def owner = userService.getUser(principal.name)
+        def dbWallet = walletService.findWallet(request.wallet.id)
         if(userWithShare && dbWallet.owner == owner){
-            walletService.deleteShareGrant(userWithShare,wallet)
+            walletService.deleteShareGrant(userWithShare,request.wallet.id)
         }
         listSharedRequests(principal)
     }

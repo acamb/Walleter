@@ -8,7 +8,7 @@ class VOWallet {
     String description
     BigDecimal balance
     Date dateCreated
-    List<ShareWalletRequest> shareRequest
+//    List<ShareWalletRequest> shareRequest
 
     public VOWallet(){
 
@@ -19,6 +19,6 @@ class VOWallet {
         description=it.description
         balance = it.balance
         dateCreated = it.dateCreated
-        shareRequest = it.shareRequests
+  //      shareRequest = it.shareRequests
     }
 }

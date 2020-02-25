@@ -48,10 +48,6 @@ class WalletService {
         walletRepository.findById(walletId).get()
     }
 
-    User findUser(String username){
-        userRepository.findByUsername(username)
-    }
-
     Wallet addEventToWallet(Wallet wallet,WalletEvent event){
         if(wallet.balance+event.amount < 0) throw new NegativeBalanceException((wallet.balance-event.amount).toString())
         wallet.events << eventRepository.save(event)
@@ -93,13 +89,14 @@ class WalletService {
         shareRequest
     }
 
-    ShareWalletRequest acceptShareRequest(ShareWalletRequest request,String receiverUsername){
+    ShareWalletRequest acceptShareRequest(Long requestId,String receiverUsername){
+        def request = shareRequestRepository.findById(requestId).get()
         if(!shareRequestsChecks(request,receiverUsername)){
             return null
         }
         if(!request.receiver.sharedWallets?.contains(request.wallet)){
             Wallet wallet = findWallet(request.wallet.id)
-            User user = findUser(receiverUsername)
+            User user = userRepository.findByUsername(receiverUsername)
             wallet.sharers << user
             user.sharedWallets << wallet
             request.status=RequestStatus.ACCEPTED
@@ -114,7 +111,8 @@ class WalletService {
         }
     }
 
-    ShareWalletRequest rejectShareRequest(ShareWalletRequest request,String username){
+    ShareWalletRequest rejectShareRequest(Long requestId,String username){
+        def request = shareRequestRepository.findById(requestId).get()
         if(!shareRequestsChecks(request,username)){
             return null
         }
@@ -124,7 +122,8 @@ class WalletService {
 
 
 
-    void deleteShareGrant(User user, Wallet wallet){
+    void deleteShareGrant(User user, Long walletId){
+        def wallet = walletRepository.findById(walletId).get()
         if(user.sharedWallets.contains(wallet)){
             user.sharedWallets.remove(wallet)
             wallet.sharers.remove(user)
@@ -139,5 +138,14 @@ class WalletService {
         if(shareWalletRequest != dbRequest) return false
         if(!user.getShareRequests().contains(dbRequest)) return false
         return true
+    }
+
+    Wallet removeEventFromWallet(Wallet wallet, long eventId) {
+        def event = eventRepository.findById(eventId).get()
+        def dbWallet = walletRepository.findById(wallet.id).get()
+        dbWallet.balance -= event.amount
+        dbWallet.events.remove(event)
+        eventRepository.delete(event)
+        walletRepository.save(dbWallet)
     }
 }

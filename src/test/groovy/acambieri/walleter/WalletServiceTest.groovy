@@ -22,7 +22,7 @@ import javax.transaction.Transactional
 
 @SpringBootTest
 //@CompileStatic
-class WalletServiceSpec extends Specification {
+class WalletServiceTest extends Specification {
 
     @Autowired
     WalletService service
@@ -64,6 +64,23 @@ class WalletServiceSpec extends Specification {
         wallet = service.addEventToWallet(user.wallets[0], walletEvent)
         then: "an exception is thrown"
         thrown(Exception)
+    }
+
+    void "delete an event from a wallet"(){
+        given: "a user,a wallet and a event"
+        def user = createUserIfDoesntExists("pippo")
+        def wallet = service.createNewWallet(user.id, "test wallet",50)
+        wallet = service.addEventToWallet(wallet,new WalletEvent(description: 'event',amount: testamount))
+        assert wallet.balance == testamount + 50
+        when: "an event is deleted"
+        wallet = service.removeEventFromWallet(wallet,wallet.events[0].id)
+        then: "the balance is restored"
+        wallet.balance == expected
+        where:
+        testamount | expected
+        50 | 50
+        -20 | 50
+
     }
 
     void "apply a recurring event to a wallet"(){
