@@ -37,13 +37,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeRequests().antMatchers("/h2","/h2/**").permitAll().and().headers().frameOptions().sameOrigin();
-        httpSecurity.csrf().disable() //no need of csrf protection since we are setting jwt token in angular with an interceptor
+        httpSecurity.cors();
+        httpSecurity.csrf().disable() //no need of csrf protection since we are setting jwt token in vue
                 .authorizeRequests().antMatchers("/","/index.html","/*.bundle.*","/auth").permitAll()
 
                         .anyRequest().authenticated().and()
                         .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and().sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         httpSecurity.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
     }
 
     @Bean

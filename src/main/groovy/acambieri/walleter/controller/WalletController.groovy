@@ -31,7 +31,7 @@ class WalletController {
     @Autowired
     WalletService walletService;
 
-    @PostMapping("/create")
+    @PostMapping()
     VOWallet save(@RequestBody CreateWalletRequest request, Principal principal){
         if(request.amount == null) request.amount = 0
         def user = userService.getUser(principal.name)
@@ -39,7 +39,7 @@ class WalletController {
         new VOWallet(wallet)
     }
 
-    @GetMapping("/list")
+    @GetMapping()
     List<VOWallet> list(Principal principal){
         def user = userService.getUser(principal.name)
         def wallets = [*user.wallets.toList(),*user.sharedWallets.toList()]
