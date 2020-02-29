@@ -4,6 +4,7 @@ import acambieri.walleter.model.RecurringEvent
 import acambieri.walleter.model.RequestStatus
 import acambieri.walleter.model.ShareWalletRequest
 import acambieri.walleter.model.User
+import acambieri.walleter.model.VO.VOWalletEvent
 import acambieri.walleter.model.Wallet
 import acambieri.walleter.repository.RecurringEventRepository
 import acambieri.walleter.repository.ShareRequestRepository
@@ -48,8 +49,9 @@ class WalletService {
         walletRepository.findById(walletId).get()
     }
 
-    Wallet addEventToWallet(Wallet wallet,WalletEvent event){
+    Wallet addEventToWallet(Wallet wallet, WalletEvent event){
         if(wallet.balance+event.amount < 0) throw new NegativeBalanceException((wallet.balance-event.amount).toString())
+        event.wallet=wallet
         wallet.events << eventRepository.save(event)
         wallet.balance += event.amount
         walletRepository.save(wallet)

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 import java.security.Principal
@@ -27,10 +28,10 @@ class EventController {
     @Autowired
     UserService userService
     @GetMapping
-    def list(Long walletId,Principal principal){
+    def list(@RequestParam Long walletId, Principal principal){
         def user = userService.getUser(principal.name)
         def wallet = walletService.findWallet(walletId)
-        if(!wallet || wallet.owner.id != user.id || !user.sharedWallets.find({it.id == wallet.id})){
+        if(!wallet || (wallet.owner.id != user.id && !user.sharedWallets.find({it.id == wallet.id}))){
             return ResponseEntity.badRequest().build()
         }
         wallet.events.collect{new VOWalletEvent(it)}
@@ -40,8 +41,11 @@ class EventController {
     def create(@RequestBody CreateEventRequest request, Principal principal){
         def user = userService.getUser(principal.name)
         def wallet = walletService.findWallet(request.walletId)
-        if(wallet in user.wallets || wallet in user.sharedWallets){
-            new VOWallet(walletService.addEventToWallet(wallet,request.event))
+        if(wallet in user.wallets || wallet in user.sharedWallets) {
+            request.event.with {
+                new VOWallet(walletService.addEventToWallet(wallet,
+                    new WalletEvent(description:description,amount: amount) ))
+            }
         }
         else{
             ResponseEntity.badRequest().build();
