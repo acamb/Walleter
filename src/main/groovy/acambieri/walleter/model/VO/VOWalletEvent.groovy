@@ -5,6 +5,7 @@ class VOWalletEvent {
     Long id
     String description
     BigDecimal amount
+    Date date;
 
     public VOWalletEvent(){
 
@@ -14,5 +15,6 @@ class VOWalletEvent {
         id = it.id
         description = it.description
         amount = it.amount
+        this.date = it.date
     }
 }

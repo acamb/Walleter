@@ -15,5 +15,6 @@ class WalletEvent {
     BigDecimal amount
     @ManyToOne
     Wallet wallet
+    Date date
 
 }

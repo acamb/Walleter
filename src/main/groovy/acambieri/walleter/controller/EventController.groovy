@@ -35,6 +35,7 @@ class EventController {
             return ResponseEntity.badRequest().build()
         }
         wallet.events.collect{new VOWalletEvent(it)}
+            .sort{a,b -> (b.date<=>a.date) }
     }
 
     @PostMapping
@@ -44,7 +45,7 @@ class EventController {
         if(wallet in user.wallets || wallet in user.sharedWallets) {
             request.event.with {
                 new VOWallet(walletService.addEventToWallet(wallet,
-                    new WalletEvent(description:description,amount: amount) ))
+                    new WalletEvent(description:description,amount: amount,date:date) ))
             }
         }
         else{
