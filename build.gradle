@@ -8,6 +8,9 @@ group = 'acambieri'
 version = '0.0.1'
 sourceCompatibility = '1.8'
 
+bootRun {
+    jvmArgs=["-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"]
+}
 configurations {
     developmentOnly
     runtimeClasspath {
@@ -34,4 +37,3 @@ dependencies {
     }
     testCompile 'org.springframework.security:spring-security-test'
 }
-
