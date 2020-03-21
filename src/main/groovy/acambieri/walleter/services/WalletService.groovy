@@ -5,8 +5,9 @@ import acambieri.walleter.model.RequestStatus
 import acambieri.walleter.model.ScheduledEvent
 import acambieri.walleter.model.ShareWalletRequest
 import acambieri.walleter.model.User
+import acambieri.walleter.model.VO.VOScheduledEvent
 import acambieri.walleter.model.Wallet
-import acambieri.walleter.repository.RecurringEventRepository
+import acambieri.walleter.repository.ScheduledEventRepository
 import acambieri.walleter.repository.ShareRequestRepository
 import acambieri.walleter.repository.UserRepository
 import acambieri.walleter.repository.WalletEventRepository
@@ -28,7 +29,7 @@ class WalletService {
     @Autowired
     WalletEventRepository eventRepository
     @Autowired
-    RecurringEventRepository recurringEventRepository
+    ScheduledEventRepository scheduledEventRepository
     @Autowired
     ShareRequestRepository shareRequestRepository
 
@@ -56,10 +57,34 @@ class WalletService {
         walletRepository.save(wallet)
     }
 
-    Wallet addRecurringEventToWallet(Wallet wallet, ScheduledEvent event){
+    Wallet addScheduledEventToWallet(Wallet wallet, ScheduledEvent event){
         event.wallet = wallet
-        wallet.recurringEvents << recurringEventRepository.save(event)
+        wallet.scheduledEvents << scheduledEventRepository.save(event)
         walletRepository.save(wallet)
+    }
+
+    ScheduledEvent updateScheduledEventToWallet(Wallet wallet, VOScheduledEvent event){
+        ScheduledEvent dbEvent = scheduledEventRepository.findById(event.id).get()
+        event.with {
+            dbEvent.units=it.units
+            dbEvent.enabled=it.enabled
+            dbEvent.frequency=it.frequency
+            dbEvent.amount=it.amount
+            dbEvent.description=it.description
+            dbEvent.nextFire=it.nextFire
+        }
+        scheduledEventRepository.save(dbEvent)
+    }
+
+    Wallet deleteScheduledEvent(Wallet wallet,Long eventId){
+        ScheduledEvent dbEvent = scheduledEventRepository.findById(eventId).get()
+        if(wallet.scheduledEvents.remove(dbEvent)) {
+            scheduledEventRepository.delete(dbEvent)
+            walletRepository.save(wallet)
+        }
+        else{
+            return wallet
+        }
     }
 
     Wallet applyRecurringEvent(ScheduledEvent event) {
@@ -80,7 +105,7 @@ class WalletService {
     }
 
     List<ScheduledEvent> getRecurringEventsToFire(){
-        recurringEventRepository.listEventsToFire()
+        scheduledEventRepository.listEventsToFire()
     }
 
     ShareWalletRequest createShareRequest(User owner, Wallet wallet, User receiver){
@@ -109,8 +134,7 @@ class WalletService {
             user.sharedWallets << wallet
             user = userRepository.save user
             request.status=RequestStatus.ACCEPTED
-            request=shareRequestRepository.save request
-            request
+            shareRequestRepository.save request
         }
         else{
             request.status = RequestStatus.DUPLICATE
@@ -147,7 +171,7 @@ class WalletService {
     }
 
     Wallet removeEventFromWallet(Wallet wallet, long eventId) {
-        def event = eventRepository.findById(eventId).get()
+        WalletEvent event = eventRepository.findById(eventId).get()
         def dbWallet = walletRepository.findById(wallet.id).get()
         dbWallet.balance -= event.amount
         dbWallet.events.remove(event)

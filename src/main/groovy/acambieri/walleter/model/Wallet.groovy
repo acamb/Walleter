@@ -29,10 +29,13 @@ class Wallet {
     @Fetch(FetchMode.JOIN)
     Set<WalletEvent> events = new ArrayList<>()
     @OneToMany(mappedBy = "wallet")
-    Set<ScheduledEvent> recurringEvents = new ArrayList<>()
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(FetchMode.JOIN)
+    Set<ScheduledEvent> scheduledEvents = new ArrayList<>()
     @OneToMany(mappedBy = "wallet")
     Set<ShareWalletRequest> shareRequests = new ArrayList<>()
     @ManyToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
     @Fetch(FetchMode.JOIN)
     Set<User> sharers = new ArrayList<>()
 
