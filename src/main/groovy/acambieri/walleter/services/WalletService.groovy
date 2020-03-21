@@ -67,8 +67,14 @@ class WalletService {
         if(!event.enabled) return
         def wallet = walletRepository.findById(event.wallet.id).get()
         wallet.balance += event.amount
-        use(TimeCategory) {
-            event.nextFire += event.units."${event.frequency.toString().toLowerCase()}s"
+        event.lastFire=new Date()
+        if(event.units > 0) {
+            use(TimeCategory) {
+                event.nextFire += event.units."${event.frequency.toString().toLowerCase()}s"
+            }
+        }
+        else{
+            event.enabled=false
         }
         eventRepository.save(event)
         walletRepository.save(wallet)
@@ -100,10 +106,10 @@ class WalletService {
             Wallet wallet = findWallet(request.wallet.id)
             User user = userRepository.findByUsername(receiverUsername)
             wallet.sharers << user
+            wallet = walletRepository.save wallet
             user.sharedWallets << wallet
+            user = userRepository.save user
             request.status=RequestStatus.ACCEPTED
-            userRepository.save user
-            walletRepository.save wallet
             request=shareRequestRepository.save request
             request
         }
@@ -129,7 +135,6 @@ class WalletService {
         if(user.sharedWallets.contains(wallet)){
             user.sharedWallets.remove(wallet)
             wallet.sharers.remove(user)
-            userRepository.save(user)
             walletRepository.save(wallet)
         }
     }

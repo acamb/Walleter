@@ -4,21 +4,15 @@ import acambieri.walleter.model.Frequency
 import acambieri.walleter.model.RecurringEvent
 import acambieri.walleter.model.RequestStatus
 import acambieri.walleter.model.ShareWalletRequest
-import acambieri.walleter.model.Wallet
 import acambieri.walleter.model.WalletEvent
 import acambieri.walleter.model.User
 import acambieri.walleter.repository.UserRepository
 import acambieri.walleter.services.WalletService
 import groovy.time.TimeCategory
-import groovy.transform.CompileStatic
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.annotation.Rollback
-import spock.lang.AutoCleanup
 import spock.lang.Specification
-
 import javax.persistence.EntityManager
-import javax.transaction.Transactional
 
 @SpringBootTest
 //@CompileStatic
@@ -41,7 +35,7 @@ class WalletServiceTest extends Specification {
         given: "a user with a wallet"
         def user = createUserIfDoesntExists("pippo")
         def wallet = service.createNewWallet(user.id, "test wallet",new BigDecimal(100))
-        user = service.findUser(user.username)
+        user = userRepository.findByUsername(user.username)
         when: "an event is added to a wallet"
         def walletEvent = new WalletEvent(amount: amount, description: "withdraw")
         wallet = service.addEventToWallet(user.wallets[0], walletEvent)
@@ -69,7 +63,7 @@ class WalletServiceTest extends Specification {
     void "delete an event from a wallet"(){
         given: "a user,a wallet and a event"
         def user = createUserIfDoesntExists("pippo")
-        def wallet = service.createNewWallet(user.id, "test wallet",50)
+        def wallet = service.createNewWallet(user.id, "test wallet",50.0)
         wallet = service.addEventToWallet(wallet,new WalletEvent(description: 'event',amount: testamount))
         assert wallet.balance == testamount + 50
         when: "an event is deleted"
@@ -102,7 +96,31 @@ class WalletServiceTest extends Specification {
         recurringEvent = service.recurringEventRepository.findById(recurringEvent.id).get()
         then: "the balance is changed and the nextFire property of the event is updated"
         wallet.balance == 80
-        recurringEvent.nextFire == TimeCategory.getDays(2) + fireDate
+        recurringEvent.lastFire != null
+        recurringEvent.nextFire == TimeCategory.getDays(2) + fireDate.clearTime()
+    }
+
+    void "apply a scheduled event to a wallet"(){
+        given: "a user, with a wallet and a scheduled event"
+        def user = createUserIfDoesntExists("pippo")
+        def wallet = service.createNewWallet(user.id,"test wallet",100.0)
+        def fireDate=new Date()
+        RecurringEvent recurringEvent = new RecurringEvent(frequency: Frequency.DAY,
+                units: 0, // a scheduled event is a recurring event with 0 frequency (one shot)
+                amount: -20,
+                enabled: true,
+                nextFire: fireDate,
+                description: "test recurring event"
+        )
+        wallet = service.addRecurringEventToWallet(wallet,recurringEvent)
+        when: "the recurring event is processed"
+        service.applyRecurringEvent(recurringEvent)
+        wallet = service.findWallet(wallet.id)
+        recurringEvent = service.recurringEventRepository.findById(recurringEvent.id).get()
+        then: "the balance is changed and the event is disabled"
+        wallet.balance == 80
+        recurringEvent.lastFire != null
+        recurringEvent.enabled == false
     }
 
     void "get recurring events to fire"(){
@@ -110,16 +128,18 @@ class WalletServiceTest extends Specification {
         def wallet = service.createNewWallet(createUserIfDoesntExists("pippo").id,"test wallet",100.0)
         use(TimeCategory){
             def recurringEventInThePast = new RecurringEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: true,nextFire: new Date() - 1.days,description: "test recurring event")
+            def recurringEventInThePastDisabled = new RecurringEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: false,nextFire: new Date() - 1.days,description: "test recurring event")
             def recurringEventInTheFuture = new RecurringEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: true,nextFire: new Date() + 1.days,description: "test recurring event")
-            def recurringEventInThePastDisabled = new RecurringEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: false,nextFire: new Date() - 1.hours,description: "test recurring event")
+            def recurringEventInThePast2 = new RecurringEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: true,nextFire: new Date() - 1.hours,description: "test recurring event")
             wallet=service.addRecurringEventToWallet(wallet,recurringEventInThePast)
+            wallet=service.addRecurringEventToWallet(wallet,recurringEventInThePast2)
             wallet=service.addRecurringEventToWallet(wallet,recurringEventInThePastDisabled)
             wallet=service.addRecurringEventToWallet(wallet,recurringEventInTheFuture)
         }
         when: "get the events to fire"
         List<RecurringEvent> events = service.getRecurringEventsToFire()
         then: "only enabled events in the past are retrieved"
-        events.size() == 1
+        events.size() == 2
     }
 
     User createUserIfDoesntExists(String username){
@@ -137,8 +157,8 @@ class WalletServiceTest extends Specification {
         def wallet = service.createNewWallet(user1.id,"a wallet",100.0)
         when: "a share request is created"
         service.createShareRequest(user1,wallet,user2)
-        user1 = service.findUser(user1.username)
-        user2 = service.findUser(user2.username)
+        user1 = userRepository.findByUsername(user1.username)
+        user2 = userRepository.findByUsername(user2.username)
         then: "the share request is attached to the wallet"
         user1.createdShareRequests.size() == 1
         user1.createdShareRequests[0].owner.username == user1.username
@@ -155,11 +175,11 @@ class WalletServiceTest extends Specification {
         def wallet = service.createNewWallet(user1.id,"a wallet",100.0)
         service.createShareRequest(user1,wallet,user2)
         when: "the share request is accepted"
-        user2 = service.findUser(user2.username)
+        user2 = userRepository.findByUsername(user2.username)
         ShareWalletRequest shareRequest = user2.shareRequests[0]
-        service.acceptShareRequest(shareRequest,user2.username)
+        service.acceptShareRequest(shareRequest.id,user2.username)
         entityManager.clear()
-        user2 = service.findUser(user2.username)
+        user2 = userRepository.findByUsername(user2.username)
         shareRequest = service.shareRequestRepository.findById(shareRequest.id).get()
         wallet = service.findWallet(wallet.id)
         then: "user2 has the wallet shared and the request is accepted"
@@ -169,15 +189,15 @@ class WalletServiceTest extends Specification {
         wallet.sharers.size() == 1
         wallet.sharers[0].id == user2.id
         when: "another request is made"
-        service.acceptShareRequest(shareRequest,user2.username)
+        service.acceptShareRequest(shareRequest.id,user2.username)
         shareRequest = service.shareRequestRepository.findById(shareRequest.id).get()
         wallet = service.findWallet(wallet.id)
         then: " is marked as duplicate"
         shareRequest.status == RequestStatus.DUPLICATE
         wallet.sharers.size() == 1
         when: "a share is deleted"
-        service.deleteShareGrant(user2,wallet)
-        user2 = service.findUser(user2.username)
+        service.deleteShareGrant(user2,wallet.id)
+        user2 = userRepository.findByUsername(user2.username)
         wallet = service.findWallet(wallet.id)
         then: "the share is removed from the user"
         user2.sharedWallets.size() == 0
