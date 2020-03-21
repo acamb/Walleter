@@ -1,10 +1,10 @@
 package acambieri.walleter.services
 
-import acambieri.walleter.model.RecurringEvent
+
 import acambieri.walleter.model.RequestStatus
+import acambieri.walleter.model.ScheduledEvent
 import acambieri.walleter.model.ShareWalletRequest
 import acambieri.walleter.model.User
-import acambieri.walleter.model.VO.VOWalletEvent
 import acambieri.walleter.model.Wallet
 import acambieri.walleter.repository.RecurringEventRepository
 import acambieri.walleter.repository.ShareRequestRepository
@@ -12,7 +12,6 @@ import acambieri.walleter.repository.UserRepository
 import acambieri.walleter.repository.WalletEventRepository
 import acambieri.walleter.repository.WalletRepository
 import groovy.time.TimeCategory
-import groovy.transform.CompileStatic
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -57,13 +56,13 @@ class WalletService {
         walletRepository.save(wallet)
     }
 
-    Wallet addRecurringEventToWallet(Wallet wallet, RecurringEvent event){
+    Wallet addRecurringEventToWallet(Wallet wallet, ScheduledEvent event){
         event.wallet = wallet
         wallet.recurringEvents << recurringEventRepository.save(event)
         walletRepository.save(wallet)
     }
 
-    Wallet applyRecurringEvent(RecurringEvent event) {
+    Wallet applyRecurringEvent(ScheduledEvent event) {
         if(!event.enabled) return
         def wallet = walletRepository.findById(event.wallet.id).get()
         wallet.balance += event.amount
@@ -80,7 +79,7 @@ class WalletService {
         walletRepository.save(wallet)
     }
 
-    List<RecurringEvent> getRecurringEventsToFire(){
+    List<ScheduledEvent> getRecurringEventsToFire(){
         recurringEventRepository.listEventsToFire()
     }
 

@@ -9,9 +9,8 @@ import javax.persistence.Temporal
 import javax.persistence.TemporalType
 
 @Entity
-class RecurringEvent  extends WalletEvent{
+class ScheduledEvent extends WalletEvent{
 
-    Long id
     Frequency frequency
     Integer units
     Date dateCreated

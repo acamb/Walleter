@@ -32,10 +32,7 @@ class ShareWalletRequest {
         ShareWalletRequest that = (ShareWalletRequest) o
 
         if (id != that.id) return false
-        if (owner.id != that.owner.id) return false
-        if (receiver.id != that.receiver.id) return false
         if (status != that.status) return false
-        if (wallet.id != that.wallet.id) return false
 
         return true
     }
@@ -43,10 +40,7 @@ class ShareWalletRequest {
     int hashCode() {
         int result
         result = (id != null ? id.hashCode() : 0)
-        result = 31 * result + status.hashCode()
-        result = 31 * result + owner.hashCode()
-        result = 31 * result + receiver.hashCode()
-        result = 31 * result + wallet.hashCode()
+        result = 31 * result + (status != null ? status.hashCode() : 0)
         return result
     }
 }

@@ -1,8 +1,8 @@
 package acambieri.walleter
 
 import acambieri.walleter.model.Frequency
-import acambieri.walleter.model.RecurringEvent
 import acambieri.walleter.model.RequestStatus
+import acambieri.walleter.model.ScheduledEvent
 import acambieri.walleter.model.ShareWalletRequest
 import acambieri.walleter.model.WalletEvent
 import acambieri.walleter.model.User
@@ -82,7 +82,7 @@ class WalletServiceTest extends Specification {
         def user = createUserIfDoesntExists("pippo")
         def wallet = service.createNewWallet(user.id,"test wallet",100.0)
         def fireDate=new Date()
-        RecurringEvent recurringEvent = new RecurringEvent(frequency: Frequency.DAY,
+        ScheduledEvent recurringEvent = new ScheduledEvent(frequency: Frequency.DAY,
                 units: 2,
                 amount: -20,
                 enabled: true,
@@ -105,7 +105,7 @@ class WalletServiceTest extends Specification {
         def user = createUserIfDoesntExists("pippo")
         def wallet = service.createNewWallet(user.id,"test wallet",100.0)
         def fireDate=new Date()
-        RecurringEvent recurringEvent = new RecurringEvent(frequency: Frequency.DAY,
+        ScheduledEvent recurringEvent = new ScheduledEvent(frequency: Frequency.DAY,
                 units: 0, // a scheduled event is a recurring event with 0 frequency (one shot)
                 amount: -20,
                 enabled: true,
@@ -127,17 +127,17 @@ class WalletServiceTest extends Specification {
         given: "a wallet with some recurring events"
         def wallet = service.createNewWallet(createUserIfDoesntExists("pippo").id,"test wallet",100.0)
         use(TimeCategory){
-            def recurringEventInThePast = new RecurringEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: true,nextFire: new Date() - 1.days,description: "test recurring event")
-            def recurringEventInThePastDisabled = new RecurringEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: false,nextFire: new Date() - 1.days,description: "test recurring event")
-            def recurringEventInTheFuture = new RecurringEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: true,nextFire: new Date() + 1.days,description: "test recurring event")
-            def recurringEventInThePast2 = new RecurringEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: true,nextFire: new Date() - 1.hours,description: "test recurring event")
+            def recurringEventInThePast = new ScheduledEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: true,nextFire: new Date() - 1.days,description: "test recurring event")
+            def recurringEventInThePastDisabled = new ScheduledEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: false,nextFire: new Date() - 1.days,description: "test recurring event")
+            def recurringEventInTheFuture = new ScheduledEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: true,nextFire: new Date() + 1.days,description: "test recurring event")
+            def recurringEventInThePast2 = new ScheduledEvent(frequency: Frequency.DAY,units: 2,amount: -20,enabled: true,nextFire: new Date() - 1.hours,description: "test recurring event")
             wallet=service.addRecurringEventToWallet(wallet,recurringEventInThePast)
             wallet=service.addRecurringEventToWallet(wallet,recurringEventInThePast2)
             wallet=service.addRecurringEventToWallet(wallet,recurringEventInThePastDisabled)
             wallet=service.addRecurringEventToWallet(wallet,recurringEventInTheFuture)
         }
         when: "get the events to fire"
-        List<RecurringEvent> events = service.getRecurringEventsToFire()
+        List<ScheduledEvent> events = service.getRecurringEventsToFire()
         then: "only enabled events in the past are retrieved"
         events.size() == 2
     }

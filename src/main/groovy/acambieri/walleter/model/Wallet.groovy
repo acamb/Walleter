@@ -1,13 +1,12 @@
 package acambieri.walleter.model
 
-import groovy.transform.EqualsAndHashCode
+
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.LazyCollection
 import org.hibernate.annotations.LazyCollectionOption
 
 import javax.persistence.Entity
-import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
@@ -30,7 +29,7 @@ class Wallet {
     @Fetch(FetchMode.JOIN)
     Set<WalletEvent> events = new ArrayList<>()
     @OneToMany(mappedBy = "wallet")
-    Set<RecurringEvent> recurringEvents = new ArrayList<>()
+    Set<ScheduledEvent> recurringEvents = new ArrayList<>()
     @OneToMany(mappedBy = "wallet")
     Set<ShareWalletRequest> shareRequests = new ArrayList<>()
     @ManyToMany
