@@ -13,6 +13,10 @@ class VOScheduledEvent extends VOWalletEvent {
     Date nextFire
     Boolean enabled
 
+    public VOScheduledEvent(){
+
+    }
+
     public VOScheduledEvent(ScheduledEvent it){
         this.id = it.id
         this.description = it.description

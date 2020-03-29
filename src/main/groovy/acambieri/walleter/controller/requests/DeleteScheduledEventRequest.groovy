@@ -1,6 +1,9 @@
 package acambieri.walleter.controller.requests
 
+import acambieri.walleter.model.VO.VOWallet
+import acambieri.walleter.model.VO.VOWalletEvent
+
 class DeleteScheduledEventRequest {
-    Long walletid
-    Long eventId
+    VOWalletEvent event
+    VOWallet wallet
 }
