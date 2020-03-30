@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
 import javax.transaction.Transactional
 
 @Component
+@Profile("development")
 class TestEventListener {
 
     @Autowired
@@ -22,7 +23,7 @@ class TestEventListener {
 
     @EventListener
     @Transactional
-    @Profile("development")
+
     void onApplicationEvent(ContextRefreshedEvent event){
         userRepository.save(new User(username: "test",password:passwordEncoder.encode("testme")))
         userRepository.save(new User(username: "test2",password:passwordEncoder.encode("testme")))

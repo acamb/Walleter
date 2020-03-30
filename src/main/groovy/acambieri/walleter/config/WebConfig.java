@@ -1,5 +1,6 @@
 package acambieri.walleter.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -11,6 +12,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  */
 @org.springframework.context.annotation.Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    @Value("${cors.addresses}")
+    private String cors;
     
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -20,6 +24,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**").allowedOrigins("http://localhost:8080").allowedMethods("GET", "POST","PUT", "DELETE");
+        registry.addMapping("/**").allowedOrigins(cors).allowedMethods("GET", "POST","PUT", "DELETE");
     }
 }
