@@ -11,8 +11,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.MessageDigestPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -39,7 +42,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         httpSecurity.authorizeRequests().antMatchers("/h2","/h2/**").permitAll().and().headers().frameOptions().sameOrigin();
         httpSecurity.cors();
         httpSecurity.csrf().disable() //no need of csrf protection since we are setting jwt token in vue
-                .authorizeRequests().antMatchers("/","/index.html","/*.bundle.*","/auth").permitAll()
+                .authorizeRequests().antMatchers("/auth").permitAll()
 
                         .anyRequest().authenticated().and()
                         .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and().sessionManagement()
@@ -56,6 +59,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new MessageDigestPasswordEncoder("SHA-256");
+        return new BCryptPasswordEncoder();
     }
 }
